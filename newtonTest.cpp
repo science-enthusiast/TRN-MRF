@@ -22,21 +22,7 @@
 #include "opengm/functions/truncated_squared_difference.hxx"
 #include <opengm/inference/external/ad3.hxx>
 
-//std::vector<double> popUniformUEnergy(int);
-//std::vector<double> popUniformCEnergy(int);
-//std::vector<double> popUniformCEnergy(std::vector<int>, std::vector<short>);
-//std::vector<double> popl1DispUEnergy(int, int, int, int, int, std::vector<double>, std::vector<double>);
-//int popStereoSmoothEnergies(int, int, const std::vector<double> &, const std::vector<double> &, double, double, std::vector<std::vector<double> > &, double &, std::vector<std::map<int,double> >  &, std::vector<std::set<int> > &, std::vector<std::vector<int> > &);
 void populateCliqLab(int, int, std::vector<std::vector<int> > &);
-//std::vector<double> popDenoiseUEnergy(int, double);
-//std::vector<double> popFoEUEnergy(int, double);
-//std::vector<double> popSparseDenoiseCEnergy(int);
-//int popSparseDenoiseCEnergy(int, int, double &, std::vector<std::set<int> > &, std::vector<std::map<int,double> > &);
-//std::vector<std::pair<std::vector<short>,double> > popSparseDenoiseCEnergyPair(short);
-//std::vector<double> popDenoiseCEnergy(int, int, std::vector<std::vector<int> >);
-//std::vector<double> popTruncVarDenoiseCEnergy(int, int, std::vector<std::vector<int> >);
-//std::vector<double> popFoECEnergy(int, std::vector<double>);
-//std::vector<double> popSqCEnergy(int nLabel);
 
 int populateNodeCliqLists(int, int, int, int, std::vector<std::vector<int> > &);
 
@@ -208,7 +194,6 @@ int main(int argc, char* argv[])
   }
   else if (line.find("MRF model") != std::string::npos) {
    sin>>mrfModel;
-
    std::cout<<"MRF model: "<<mrfModel<<std::endl;
   }
 
@@ -469,7 +454,6 @@ int main(int argc, char* argv[])
     for (int u = 0; u != nLabel[n]; ++u) {
      uEnergy.push_back(0); //log(1)
     }
-
     myDual->addNode(n,uEnergy);
    }
   }
@@ -733,7 +717,6 @@ int main(int argc, char* argv[])
 
   myDual = new dualSys(nNode, nLabel, tau, stgCvxCoeff, maxIter, annealIval, stgCvxFlag);
 
-  //adding Unaries
   if ((mrfModel.compare("var") == 0) || (mrfModel.compare("spden1") == 0) || (mrfModel.compare("spden2") == 0) || (mrfModel.compare("spden3") == 0) || (mrfModel.compare("sqdiff") == 0) || (mrfModel.compare("spvar") == 0) || (mrfModel.compare("spvarcom") == 0)) {
    for (int i = 0; i != nNode; ++i) {
     std::vector<double> uEnergy = popDenoiseUEnergy(nLabel[i], pixVals[i]);
@@ -976,50 +959,6 @@ int main(int argc, char* argv[])
  }
  opImg<<primalMax[nNode - 1];
  opImg.close();
-
-#if 0
- std::ifstream propFilesList("proposalFiles.txt");
-
- std::vector<std::vector<double> > proposals;
-
- std::string propFile;
-
- while (propFilesList>>propFile) {
-  std::cout<<propFile<<std::endl;
-
-  std::ifstream propStream(propFile);
-
-  double propVal;
-
-  std::vector<double> propValVec;
-  std::string propCurLine;
-
-  while (propStream>>propCurLine) {
-   std::stringstream propCurStream(propCurLine);
-   while (propCurStream>>propVal) {
-    propValVec.push_back(propVal);
-   }
-  }
-
-  proposals.push_back(propValVec);
- }
-
- int numProposals = proposals.size();
-
- std::cout<<"number of proposals is "<<numProposals<<std::endl;
-
- std::string opStereoName = "opStereo" + ipFile.substr(slashPos+1,strLen) + "txt";
-
- std::ofstream opStereoImg(opStereoName.c_str());
-
- std::cout<<"output file "<<opStereoName<<" open status "<<opStereoImg.is_open()<<std::endl;
-
- for (int i = 0; i != nNode - 1; ++i) {
-  opStereoImg<<proposals[primalMax[i]][i]<<" ";
- }
- opStereoImg<<proposals[primalMax[nNode - 1]][nNode-1];
- opStereoImg.close();
-#endif
 
  return 0;
 }

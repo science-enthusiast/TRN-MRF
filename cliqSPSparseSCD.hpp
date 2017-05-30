@@ -99,7 +99,6 @@ int performSPBwdSparseSCD(const subProblem *subProb, const std::vector<int> &sub
 
    ++twoStrideInd;
   }
-
   expo = tau*(cEnergyConst - dualSum);
 
   expoVecSum[iTwoLab] = expo;

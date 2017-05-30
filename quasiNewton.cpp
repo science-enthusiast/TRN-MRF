@@ -28,8 +28,6 @@ Eigen::VectorXd quasiNewton::solve(const Eigen::VectorXd &gradient, const Eigen:
     iRing += memSiz_;
    }
 
-   //std::cout<<"ring index is "<<iRing<<std::endl;
-
    alpha[memSiz_-1-i] = rho_[iRing]*sArr_[iRing].dot(gradient);
 
    if (isnan(alpha[memSiz_-1-i])) {
@@ -65,7 +63,6 @@ Eigen::VectorXd quasiNewton::solve(const Eigen::VectorXd &gradient, const Eigen:
     std::cout<<"ELEMENT OF r IS NAN!"<<std::endl;
    }
   }
-
   for (int i = 0; i != memSiz_; ++i) {
    int iRing = offRing_ + i;
 

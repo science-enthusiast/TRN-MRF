@@ -32,7 +32,7 @@ int debugEigenVec(Eigen::VectorXd);
 
 dualSys::dualSys(int nNode, std::vector<short> nLabel, double tau, double stgCvxCoeff, int mIter, int annealIval, bool stgCvxFlag): nDualVar_(0), nNode_(nNode), numLabTot_(0), nLabel_(nLabel), nCliq_(0), tau_(tau), tauStep_(tau), solnQual_(false), finalEnergy_(0), stgCvxFlag_(stgCvxFlag), stgCvxCoeff_(stgCvxCoeff), maxIter_(mIter), lsAlpha_(1), annealIval_(annealIval) {
 
- for (int i = 0; i != nNode_; ++i) {
+  for (int i = 0; i != nNode_; ++i) {
   unaryOffset_.push_back(numLabTot_);
   numLabTot_ += nLabel_[i];
  }
@@ -273,25 +273,6 @@ int dualSys::prepareDualSys() {
  hessColPtr_ = new int[nDualVar_+1];
  nNonZeroLower_ = 0;
 
-// assignPrimalVars("/home/hari/libraries/drwn-1.9.0/bin/testLabels.txt"); //assign ground truth labeling
-// std::cout<<"energy (hard-coded assignment): "<<compIntPrimalEnergy()<<std::endl;
-
-// recoverFracPrimal();
-// recoverMaxPrimal(primalFrac_);
-
-// std::cout<<"Initial integral primal energy: "<<compIntPrimalEnergy()<<std::endl;
-// std::cout<<"Initial non-smooth dual energy: "<<compNonSmoothDualEnergy()<<std::endl;
-
-// std::ifstream dualVarFile("debugDual.txt");
-
-// for (int i = 0; i != nDualVar_; ++i) {
-//  dualVarFile>>dualVar_[i];
-// }
-
-// distributeDualVars();
-
-// tau_ = 8192;
-
  return 0;
 }
 
@@ -304,9 +285,6 @@ int dualSys::popGradHessEnergyPerf(int cntIter) {
  curEnergy_ = 0;
  double curEnergyRdx = 0;
 
-// double maxElem = 0, minElem = 0;
-
- //#pragma omp parallel for reduction(+ : curEnergyRdx)
  for (int curNode = 0; curNode < nNode_; ++curNode) {
   double expVal;
 
@@ -316,11 +294,9 @@ int dualSys::popGradHessEnergyPerf(int cntIter) {
 
   double f2Den = 0;
 
-//  #pragma omp parallel for
   for (int i = 0; i != nLabel; ++i) {
    double cliqSumLabel = 0;
 
-//   #pragma omp for reduction(+ : cliqSumLabel)
    for (std::vector<int>::iterator j = cliqPerNode_[curNode].begin(); j != cliqPerNode_[curNode].end(); ++j) {
     int nodeInd = myUtils::findNodeIndex(subProb_[*j].memNode_, curNode);
 
@@ -1361,13 +1337,10 @@ int dualSys::popGradEnergy(const std::vector<double> &ipVar, std::vector<double>
  } //for curNode
 
 #if 1
- //#pragma omp parallel for reduction(+ : opFunc)
  for (int cliqJ = 0; cliqJ < nCliq_; ++cliqJ) {
   int sizCliqJ = subProb_[cliqJ].sizCliq_;
   std::vector<short> nLabelJ = subProb_[cliqJ].getNodeLabel();
 
-  //std::vector<double> cEnergy = subProb_[cliqJ].getCE();
-  //std::vector<double> cEnergy = cEnergy2DVec_[cliqOffset_[cliqJ]];
   std::vector<int> nodeOffsetJ = subProb_[cliqJ].getNodeOffset();
   int cliqOffsetJ = subProb_[cliqJ].getCliqOffset();
   std::vector<int> memNodeJ = subProb_[cliqJ].memNode_;
@@ -1596,15 +1569,7 @@ int dualSys::solveNewton()
    std::cout<<"Annealing: grad norm "<<gradNorm<<" grad based damp "<<gradBasedDamp<<std::endl;
    cntIterTau = 1;
    tau_ *= tauScale_;
-//   gradDampFlag = true;
-//   if (tau_ == tauMax_) {
-//    dampLambda_ = 10*dampLambdaInit_;
-//   }
-//   else {
    dampLambda_ = dampLambdaInit_; //####
-//   }
-//   eigenHess_.setZero();
-//   eigenHess_.reserve(reserveHess_);
 
    if (fullHessStoreFlag_) {
     popGradHessEnergy(cntIter);
@@ -1662,23 +1627,6 @@ int dualSys::solveNewton()
    hessFile.open(opName);
    hessFile<<std::scientific;
    hessFile<<std::setprecision(6);
-
-   //std::ofstream fullHessian("trueHessian.txt");
-
-   //for (int iRow = 0; iRow != nDualVar_; ++iRow) {
-   // for (int iCol = 0; iCol != (nDualVar_-1); ++iCol) {
-   //  if (iRow < iCol) {
-   //   fullHessian<<eigenHess_.coeffRef(iCol,iRow)<<" ";
-   //  }
-   //  else {
-   //   fullHessian<<eigenHess_.coeffRef(iRow,iCol)<<" ";
-   //  }
-   // }
-
-   // fullHessian<<eigenHess_.coeffRef(nDualVar_-1,iRow)<<std::endl;
-   //}
-
-   //fullHessian.close();
 
    for (int cJ = 0; cJ != nCliq_; ++cJ) {
     int sizCliqJ = subProb_[cJ].sizCliq_;
@@ -1865,7 +1813,6 @@ int dualSys::solveNewton()
 //updating damping lambda inspired by "Newton's method for large-scale optimization" by Bouaricha et al
 
 //std::cout<<"next energy "<<nxtEnergy<<" "<<" current energy "<<curEnergy_<<" next approx energy diff "<<nxtApproxEnergyDiff<<" interValOne "<<interValOne<<" interValTwo "<<interValTwo<<std::endl;
-
 //  int newtonMaxInd = myUtils::argmaxAbs<double>(newtonStep_,0,nDualVar_);
 //  std::cout<<"solveNewton: before line search newton step l-infinity norm: "<<newtonStep_[newtonMaxInd]<<". Euclidean norm: "<<newtonStepNorm<<std::endl;
    double stepNormOld = 0, stepNormNew = 0;
@@ -2393,8 +2340,6 @@ int dualSys::solveQuasiNewton()
   double tEnergy = myUtils::getTime();
 
   recoverFracPrimal();
-  //recoverFeasPrimal(); ????
-  //setFracAsFeas();
   recoverMaxPrimal(primalFrac_);
 
   std::cout<<std::fixed;
@@ -2412,7 +2357,6 @@ int dualSys::solveQuasiNewton()
  }
 #endif
 
-//  std::cout<<"ITERATION "<<cntIter<<" took "<<(myUtils::getTime() - tFull)<<" seconds.";
  }
 
  recoverFracPrimal();
@@ -2583,8 +2527,6 @@ double dualSys::compEnergy(std::vector<double> var)
    expVal =  exp(tau_*(f1Whole[j] - f1Max));
 
    myUtils::checkRangeError(expVal);
-
-//   std::cout<<"F1: EXPONENT "<<tau_*(f1Whole[j] - f1Max)<<" EXPVAL "<<expVal<<std::endl;
 
    f1Cliq += expVal;
   }
@@ -2814,9 +2756,6 @@ void dualSys::recoverFracPrimal()
 
     dualSum += subProb_[i].getDualVar()[nodeOffset[k] + cliqLabCur];
    }
-
-   //argVal[j] = subProb_[i].getCE()[j] - dualSum;
-   //argVal[j] = cEnergy2DVec_[cliqOffset_[i]][j] - dualSum;
    argVal[j] = subProb_[i].getCE(j) - dualSum;
 
    if (j == 0) {
@@ -2845,7 +2784,6 @@ void dualSys::recoverFracPrimal()
   for (int j = 0; j != nCliqLab; ++j) {
    fracVal =  (1/cliqNorm)*subProb_[i].primalCliqFrac_[j];
 
-
    if (fracVal < minNumAllow_) {
     subProb_[i].primalCliqFrac_[j] = 0;
    }
@@ -2853,40 +2791,8 @@ void dualSys::recoverFracPrimal()
     subProb_[i].primalCliqFrac_[j] = fracVal;
    }
 
-#if 0
-   std::vector<short> cliqLab;
-   double labPull = nCliqLab;
-
-   for (int k = 0; k != sizCliq; ++k) {
-    labPull /= nLabel[k];
-
-    int labPullTwo = ceil((j+1)/labPull);
-
-    if (labPullTwo % nLabel[k] == 0) {
-     cliqLab.push_back(nLabel[k] - 1);
-    }
-    else {
-     cliqLab.push_back((labPullTwo % nLabel[k]) - 1);
-    }
-   }
-
-   for (int k = 0; k != sizCliq; ++k) {
-    for (int l = 0; l != nLabel[k]; ++l) {
-     if (cliqLab[k] == l) {
-      curMargSum[nodeOffset[k] + l] += subProb_[i].primalCliqFrac_[j];
-     }
-    }
-   }
-#endif
   }
 
-#if 0
-  for (int iNode = 0; iNode != sizCliq; ++iNode) {
-   for (int iLabel = 0; iLabel != nLabel[iNode]; ++iLabel) {
-     primalFrac_[unaryOffset_[memNode[iNode]] + iLabel] = curMargSum[nodeOffset[iNode] + iLabel];
-   }
-  }
-#endif
  } //for iCliq
 }
 
@@ -2989,7 +2895,6 @@ void dualSys::assignPrimalVars(std::string labelFile)
   }
   subProb_[i].primalCliqMax_ = cliqInd;
  }
-
 }
 
 void dualSys::recoverFeasPrimal()
@@ -3254,7 +3159,6 @@ double dualSys::compNonSmoothPrimalEnergy()
 }
 
 int dualSys::distributeDualVars() {
-
  for (int i = 0; i != nCliq_; ++i) {
    std::copy(dualVar_.begin() + subProb_[i].getCliqOffset(), dualVar_.begin() + subProb_[i].getCliqOffset() + subProb_[i].getDualSiz(), subProb_[i].dualVar_.begin());
  }
@@ -3263,7 +3167,6 @@ int dualSys::distributeDualVars() {
 }
 
 int dualSys::distributeMomentum() {
-
  for (int i = 0; i != nCliq_; ++i) {
    std::copy(momentum_.begin() + subProb_[i].getCliqOffset(), momentum_.begin() + subProb_[i].getCliqOffset() + subProb_[i].getDualSiz(), subProb_[i].momentum_.begin());
  }
@@ -3282,12 +3185,6 @@ int dualSys::solveCG(Eigen::VectorXd& iterStep, std::vector<Eigen::VectorXd> &it
  int nzInChol = nNonZeroLower_ + p*nDualVar_;
 
  //data structures for Quasi Newton
-#if 0
- int numVar, numPairs, iop;
- float *workVec;
- int *iWorkVec;
- int lw, liw;
-#endif
 
  if (precondFlag_ == 2) { //create Incomplete Cholesky data-structures
   inCholLow_ = new double[nzInChol];
@@ -3320,33 +3217,6 @@ int dualSys::solveCG(Eigen::VectorXd& iterStep, std::vector<Eigen::VectorXd> &it
  b = -1*eigenGrad_;
 
  residual = getHessVecProd(iterStep) + eigenGrad_;
-
-#if 0
- Eigen::VectorXd testVec(nDualVar_);
-
- for (int iDebug = 0; iDebug != nDualVar_; ++iDebug) {
-  testVec.setZero(nDualVar_);
-
-  testVec(iDebug) = 1;
-
-  Eigen::VectorXd testFull = eigenHess_.selfadjointView<Eigen::Lower>()*testVec;
-  Eigen::VectorXd testOptim = getOptimHessVecProd(testVec);
-
-  for (int jDebug = 0; jDebug != nDualVar_; ++jDebug) {
-   if ((testFull(jDebug) <= testOptim(jDebug) - pow(10,-6)) || (testFull(jDebug) >= testOptim(jDebug) + pow(10,-6))) {
-    std::cout<<"SOMETHING WRONG! "<<testFull(jDebug)<<" "<<testOptim(jDebug)<<std::endl;
-   }
-  }
- }
- //debugEigenVec(testFull);
- //debugEigenVec(testOptim);
-
- for (int iDebug = 0 ; iDebug != nDualVar_; ++iDebug) {
-  if ((residual[iDebug] <= residualTest[iDebug] - pow(10,-6)) || (residual[iDebug] >= residualTest[iDebug] + pow(10,-6))) {
-   std::cout<<"SOMETHING WRONG!"<<std::endl;
-  }
- }
-#endif
 
  switch (precondFlag_)
  {
@@ -3665,19 +3535,6 @@ int dualSys::compInCholPrecond(int p) {
  dicfs_(&orderMat, &nNonZeroLower_, nzHessLower, hessDiag_, hessColPtr_, hessRowInd, inCholLow_, inCholDiag_, \
          inCholColPtr_, inCholRowInd_, &p, &alpha, iwa, wa1, wa2);
 
-#if 0
- std::cout<<"Lin and More: inc. Cholesky strict lower"<<std::endl;
- for (std::size_t i = 0; i != nNonZeroLower_; ++i) {
-  std::cout<<inCholLow_[i]<<" "<<std::endl;
- }
-
- std::cout<<"Lin and More: inc. Cholesky diagonal"<<std::endl;
- for (std::size_t i = 0; i != nDualVar_; ++i) {
-  std::cout<<inCholDiag_[i]<<" "<<std::endl;
- }
-#endif
- //exit(0);
-
  delete[] nzHessLower;
  delete[] hessRowInd;
  delete[] iwa;
@@ -3736,7 +3593,6 @@ int dualSys::solveFista() {
 
  t_k = t_prev = 1;
 
-// std::vector<double> x_k(nDualVar_,0);
  std::vector<double> dual_prev = dualVar_;
  std::vector<double> diffVec(nDualVar_);
 
@@ -3937,7 +3793,6 @@ int dualSys::solveFista() {
 
     recoverNodeFracPrimal();
     recoverMaxPrimal(primalFrac_);
-
     double curIntPrimalEnergy;
 
     curIntPrimalEnergy = compIntPrimalEnergy();
@@ -5130,85 +4985,23 @@ Eigen::VectorXd dualSys::getExplicitHessVecProd(const Eigen::VectorXd &ipVec) {
      if (*iCliqPerNode != iCliq) {
       for (int jLabel = 0; jLabel != nLabCom_; ++jLabel) { //iLabel:old
        opVec(opOffset + iLabel) += nodeBlk.coeff(iLabel,jLabel)*ipVec.coeff(*iNodeOff + jLabel);
-       //opVec(opOffset + iLabel) += nodeBlk[iLabel*nLabCom_+jLabel]*ipVec(*iNodeOff + jLabel);
-//       debugHess(opOffset + iLabel,*iNodeOff + jLabel) = nodeBlk(iLabel,jLabel);
-//       std::cout<<nodeBlk(iLabel,jLabel)<<" ";
       }
 
-//      for (int jLabel = iLabel; jLabel != nLabCom_; ++jLabel) {
-//       opVec(opOffset + iLabel) += nodeBlk(jLabel,iLabel)*ipVec(*iNodeOff + jLabel);
-       //opVec(opOffset + iLabel) += nodeBlk[iLabel*nLabCom_+jLabel]*ipVec(*iNodeOff + jLabel);
-//       debugHess(opOffset + iLabel,*iNodeOff + jLabel) = nodeBlk(jLabel,iLabel);
-//       std::cout<<nodeBlk(jLabel,iLabel)<<" ";
-//      }
      }
      else {
       for (int jPos = 0; jPos != subDualSiz; ++jPos) {
        opVec(opOffset + iLabel) += cliqBlk.coeff(jPos,nodeOffset[nodeCnt]+iLabel)*ipVec.coeff(cliqOffset+jPos);
-//       debugHess(opOffset + iLabel,cliqOffset+jPos) = cliqBlk(nodeOffset[nodeCnt]+iLabel,jPos);
-//       std::cout<<cliqBlk(nodeOffset[nodeCnt]+iLabel,jPos)<<" ";
       }
      }
-
-     //std::cout<<" "<<*iCliqPerNode;
 
      std::advance(iCliqPerNode,1);
     }//for iNodeOff
 
-//    std::cout<<std::endl;
    }//for iLabel
-   //std::cout<<std::endl;
 
    ++nodeCnt;
   } //for iNode
  } //for iCliq
-
-#if 0
- std::ofstream opHessian("reconHessian.txt");
-
- for (int iRow = 0; iRow != nDualVar_; ++iRow) {
-  for (int iCol = 0; iCol != (nDualVar_-1); ++iCol) {
-   opHessian<<debugHess(iRow,iCol)<<" ";
-  }
-  opHessian<<debugHess(iRow,nDualVar_-1)<<std::endl;
- }
-
- opHessian.close();
-
- std::cout<<"Actual explicitHessVecProd:"<<std::endl;
-
- for (int iDebug = 0; iDebug != nDualVar_; ++iDebug) {
-  std::cout<<" "<<opVec[iDebug];
- }
- std::cout<<std::endl;
-
- opVec = debugHess*ipVec;
-
- std::cout<<"After populating hessian. explicitHessVecProd:"<<std::endl;
-
- for (int iDebug = 0; iDebug != nDualVar_; ++iDebug) {
-  std::cout<<" "<<opVec[iDebug];
- }
- std::cout<<std::endl;
-
- opVec = eigenHess_.selfadjointView<Eigen::Lower>()*ipVec;
-
- std::cout<<"originalHessVecProd"<<std::endl;
-
- for (int iDebug = 0; iDebug != nDualVar_; ++iDebug) {
-  std::cout<<" "<<opVec[iDebug];
- }
- std::cout<<std::endl;
-
- opVec = getDistHessVecProd(ipVec);
-
- std::cout<<"DistHessVecProd"<<std::endl;
-
- for (int iDebug = 0; iDebug != nDualVar_; ++iDebug) {
-  std::cout<<" "<<opVec[iDebug];
- }
- std::cout<<std::endl;
-#endif
 
  return opVec;
 }

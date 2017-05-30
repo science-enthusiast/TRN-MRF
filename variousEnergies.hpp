@@ -23,7 +23,6 @@ std::vector<double> popl1DispUEnergy(int rPos, int cPos, int nRow, int nCol, int
    rVal = rImg[rPos*nCol + cPos];
 
    double lVal;
-
    if (cPos + iL < 0) {
     lVal = lImg[rPos*nCol + cPos];
    }
@@ -60,7 +59,6 @@ std::vector<double> popPropl1DispUEnergy(int rPos, int cPos, int nRow, int nCol,
    rVal = rImg[rPos*nCol + cPos];
 
    double lVal;
-
    if (cPos + iL < 0) {
     lVal = lImg[rPos*nCol + cPos];
    }
@@ -201,9 +199,6 @@ int popStereoSmoothEnergies(int nRow, int nCol, const std::vector<double> &lImg,
       sparseEnergy[energyInd] = -1*Fx;
       ++sparseCnt;
      }
-//     else {
-//      cliqEnergy.push_back(-1*kappa);
-//     }
 
      ++energyInd;
     }
@@ -229,7 +224,6 @@ std::vector<double> popDenoiseUEnergy(int nLabel, double pixVal) {
  std::vector<double> uEnergy;
 
  for (int i = 0; i != nLabel; ++i) {
- //uEnergy.push_back(-1*pow(j-pixVal, 2));
   uEnergy.push_back(-1*std::abs(i-pixVal));
  }
 
@@ -240,7 +234,6 @@ std::vector<double> popDenRelUEnergy(int nLabel) {
  std::vector<double> uEnergy;
 
  for (int i = -1*(nLabel/2); i < nLabel/2; ++i) {
- //uEnergy.push_back(-1*pow(j-pixVal, 2));
   uEnergy.push_back(-1*std::abs(i));
  }
 
@@ -399,14 +392,11 @@ std::vector<double> popSparseDenoiseCEnergy(int nLabel) {
   for (int j = 0; j != nLabel; ++j) {
    for (int k = 0; k != nLabel; ++k) {
     int Fx = i-2*j+k;
-
     double grad = (k-i)/2.0;
 
     if ((std::abs(Fx) <= kappa) && (std::abs(grad) <= alphaMax)) {
-     //cEnergy.push_back(-1*std::abs(Fx));
      cEnergy.push_back(0);
      ++sparseCnt;
-     //std::cout<<"pattern is "<<i<<" "<<j<<" "<<k<<std::endl;
     }
     else {
      cEnergy.push_back(-1*kappa);
@@ -676,7 +666,6 @@ std::vector<std::vector<double> > popSiftMatchUEnergy() {
  //int sqrtLab = static_cast<int>(sqrt(nLabel));
 
  for (std::size_t nodeInd = 0; nodeInd != siftDescOne.size(); ++nodeInd) {
-
   std::vector<double> curUEnergy(nLabel);
 
   std::cout<<"uEnergy for node "<<nodeInd<<":";
@@ -716,7 +705,6 @@ int popSynth2DGraphMatchCEnergy(std::string fileNamePrefix, std::vector<short> n
  std::cout<<"Clique energy scale = "<<energyScale<<std::endl;
 
  std::string nnDataFile = "/home/hari/softwares/ann_1.1.2/ann_1.1.2/bin/" + fileNamePrefix + "nnop.txt";
-
  std::cout<<"Nearest neighbours file "<<nnDataFile<<std::endl;
 
  //std::string nnDataFile = "/home/hari/Dropbox/input/" + fileNamePrefix + "nnop.txt";
@@ -816,7 +804,6 @@ int popSynth2DGraphMatchCEnergy(std::string fileNamePrefix, std::vector<short> n
    for (int iNN = 0; iNN != nnCnt; ++iNN) {
     std::getline(ipFile,nnData);
     int nnInd, sparseInd = 0;
-
     std::stringstream nnDataStream(nnData);
 
     nnDataStream>>nnInd;

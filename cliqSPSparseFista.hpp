@@ -82,7 +82,6 @@ int performSPBwdSparse(const subProblem *subProb, const std::vector<int> &subPro
 
    ++twoStrideInd;
   }
-
   expo = tau*(cEnergyConst - dualSum);
 
   expoVecSum[iTwoLab] = expo;
@@ -255,7 +254,6 @@ int performSPFwdSparse(const subProblem *subProb, const std::vector<int> &subPro
 
    ++oneStrideInd;
   }
-
   expo = tau*(cEnergyConst - dualSum);
 
   expoVecSum[iOneLab] = expo;
