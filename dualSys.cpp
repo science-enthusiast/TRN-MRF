@@ -892,9 +892,6 @@ int dualSys::popGradEnergyFista() {
  curEnergy_ = 0;
  double curEnergyRdx = 0;
 
- double stgTerm = 0;
-
-//#pragma omp parallel for reduction(+:curEnergyRdx)
  for (int curNode = 0; curNode < nNode_; ++curNode) {
   double expVal;
 
@@ -941,7 +938,6 @@ int dualSys::popGradEnergyFista() {
 
  //std::cout<<"clique processed:";
 #if 1
-//#pragma omp parallel for reduction(+:curEnergyRdx,stgTerm)
  for (int cliqJ = 0; cliqJ < nCliq_; ++cliqJ) {
   //std::cout<<" "<<cliqJ;
   std::cout<<std::flush;
@@ -1076,9 +1072,6 @@ int dualSys::popGradEnergy() {
  curEnergy_ = 0;
  double curEnergyRdx = 0;
 
- double stgTerm = 0;
-
- //#pragma omp parallel for reduction(+ : curEnergyRdx)
  for (int curNode = 0; curNode < nNode_; ++curNode) {
   double expVal;
 
@@ -1124,7 +1117,6 @@ int dualSys::popGradEnergy() {
  double f1Den;
 
 #if 1
- //#pragma omp parallel for reduction(+ : curEnergyRdx,stgTerm)
  for (int cliqJ = 0; cliqJ < nCliq_; ++cliqJ) {
   int nCliqLab = subProb_[cliqJ].nCliqLab_;
   int sizCliqJ = subProb_[cliqJ].sizCliq_;
@@ -1267,9 +1259,6 @@ int dualSys::popGradEnergy(const std::vector<double> &ipVar, std::vector<double>
 
  opFunc = 0;
 
- double stgTerm = 0;
-
- //#pragma omp parallel for reduction(+ : opFunc)
  for (int curNode = 0; curNode < nNode_; ++curNode) {
   double expVal;
 
@@ -2356,8 +2345,6 @@ double dualSys::compEnergySparse(std::vector<double> var)
  double expVal = 0;
  double f1 = 0;
 
- double stgTerm = 0;
-
  for (int iCliq = 0; iCliq != nCliq_; ++iCliq) {
   double f1Energy = 0;
 
@@ -2486,8 +2473,6 @@ double dualSys::compEnergy(std::vector<double> var)
 // std::cout<<"DEBUG: F1 "<<f1<<std::endl;
 
  double f2 = 0;
-
- double stgTerm = 0;
 
  for (int i = 0; i != nNode_; ++i) {
   int nLabel = nLabel_[i];
