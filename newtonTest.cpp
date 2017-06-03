@@ -49,16 +49,12 @@ int main(int argc, char* argv[])
 
  std::string ipType, algoName, logLabel, mrfModel;
  bool sparseFlag;
- double sampN;
  bool oneCliqTable = false;
 
  dualSys* myDual;
 
  double tau = 1;
  int maxIter = 10000, annealIval = 1; //annealIval = -1: no annealing
- double stgCvxCoeff = 1;
- bool stgCvxFlag = false;
- bool stgCvxIp = false; //what is specified in the config file; accept only if fista or scd
 
  double unaryScale = 1;
 
@@ -143,14 +139,6 @@ int main(int argc, char* argv[])
    sin>>tau;
    std::cout<<"Initial tau value "<<tau<<std::endl;
   }
-  else if (line.find("strong convexity coeff") != std::string::npos) {
-   sin>>stgCvxCoeff;
-   std::cout<<"Strong convexity coefficient "<<stgCvxCoeff<<std::endl;
-  }
-  else if (line.find("Strong convexity flag") != std::string::npos) {
-   sin>>std::boolalpha>>stgCvxIp;
-   std::cout<<"Strong convexity flag "<<stgCvxIp<<std::endl;
-  }
   else if (line.find("Max. iterations") != std::string::npos) {
    sin>>maxIter;
    std::cout<<"Max. iterations "<<maxIter<<std::endl;
@@ -166,9 +154,6 @@ int main(int argc, char* argv[])
   }
   else if (line.find("Sparse") != std::string::npos) {
    sin>>std::boolalpha>>sparseFlag;
-  }
-  else if (line.find("Sample") != std::string::npos) {
-   sin>>sampN;
   }
   else if (line.find("Anneal") != std::string::npos) {
    std::string annealFlag;
@@ -206,14 +191,6 @@ int main(int argc, char* argv[])
 
  std::cout<<"Log label: "<<logLabel<<std::endl;
 
- if ((algoName.compare("fista") != 0) && (stgCvxIp)) {
-  std::cout<<"ERROR: strong convexity can be applied only with FISTA."<<std::endl;
-  return -1;
- }
- else {
-  stgCvxFlag = stgCvxIp;
- }
-
  if (ipType.compare("uai") == 0) { //INPUT: take input from uai file
   std::ifstream uaiFile(ipFile);
 
@@ -250,7 +227,7 @@ int main(int argc, char* argv[])
   sin.str(curLine);
   sin>>totCliq;
 
-  myDual = new dualSys(nNode, nLabel, tau, stgCvxCoeff, maxIter, annealIval, stgCvxFlag);
+  myDual = new dualSys(nNode, nLabel, tau, maxIter, annealIval);
 
   bool readNodeList = true;
 
@@ -472,7 +449,7 @@ int main(int argc, char* argv[])
     nLabel[n] = gm.numberOfLabels(n);
    }
 
-   myDual = new dualSys(nNode, nLabel, tau, stgCvxCoeff, maxIter, annealIval, stgCvxFlag);
+   myDual = new dualSys(nNode, nLabel, tau, maxIter, annealIval);
 
    std::cout<<"Number of factors "<<gm.numberOfFactors()<<std::endl;
 
@@ -715,7 +692,7 @@ int main(int argc, char* argv[])
 
   //cliqNodes.resize(nCliq);
 
-  myDual = new dualSys(nNode, nLabel, tau, stgCvxCoeff, maxIter, annealIval, stgCvxFlag);
+  myDual = new dualSys(nNode, nLabel, tau, maxIter, annealIval);
 
   if ((mrfModel.compare("var") == 0) || (mrfModel.compare("spden1") == 0) || (mrfModel.compare("spden2") == 0) || (mrfModel.compare("spden3") == 0) || (mrfModel.compare("sqdiff") == 0) || (mrfModel.compare("spvar") == 0) || (mrfModel.compare("spvarcom") == 0)) {
    for (int i = 0; i != nNode; ++i) {

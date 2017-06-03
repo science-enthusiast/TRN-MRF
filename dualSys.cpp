@@ -30,7 +30,7 @@
 
 int debugEigenVec(Eigen::VectorXd);
 
-dualSys::dualSys(int nNode, std::vector<short> nLabel, double tau, double stgCvxCoeff, int mIter, int annealIval, bool stgCvxFlag): nDualVar_(0), nNode_(nNode), numLabTot_(0), nLabel_(nLabel), nCliq_(0), tau_(tau), tauStep_(tau), solnQual_(false), finalEnergy_(0), stgCvxFlag_(stgCvxFlag), stgCvxCoeff_(stgCvxCoeff), maxIter_(mIter), lsAlpha_(1), annealIval_(annealIval) {
+dualSys::dualSys(int nNode, std::vector<short> nLabel, double tau, int mIter, int annealIval): nDualVar_(0), nNode_(nNode), numLabTot_(0), nLabel_(nLabel), nCliq_(0), tau_(tau), tauStep_(tau), solnQual_(false), finalEnergy_(0), maxIter_(mIter), lsAlpha_(1), annealIval_(annealIval) {
 
   for (int i = 0; i != nNode_; ++i) {
   unaryOffset_.push_back(numLabTot_);
@@ -120,8 +120,6 @@ int dualSys::prepareDualSys() {
  pdGap_ = 1;
  pdInitFlag_ = true;
  smallGapIterCnt_ = 0;
-
- std::cout<<"Strong convexity flag "<<stgCvxFlag_<<std::endl;
 
  nLabelMax_ = *std::max_element(nLabel_.begin(), nLabel_.end());
 
@@ -1054,22 +1052,10 @@ int dualSys::popGradEnergyFista() {
     int curJNode = memNodeJ[elemJ];
 
     gradient_[curJ] = -1*nodeLabSum[nodeOffsetJ[elemJ] + labelJ] + f2LabelSum[unaryOffset_[curJNode] + labelJ];
-
-    if (stgCvxFlag_) {
-     gradient_[curJ] += stgCvxCoeff_*dualVar_[curJ];
-
-     stgTerm += pow(dualVar_[curJ],2);
-    }
-
    } // for labelJ
   } //for elemJ
  } //for cliqJ
 #endif
-
- if (stgCvxFlag_) {
-  curEnergyRdx += 0.5*stgCvxCoeff_*stgTerm;
-  //std::cout<<"popGradEnergy: strong convexity term added to the energy: "<<stgTerm<<std::endl;
- }
 
  curEnergy_ = curEnergyRdx;
 
@@ -1251,22 +1237,10 @@ int dualSys::popGradEnergy() {
     int curJNode = memNodeJ[elemJ];
 
     gradient_[curJ] = -1*nodeLabSum[nodeOffsetJ[elemJ] + labelJ] + f2LabelSum[unaryOffset_[curJNode] + labelJ];
-
-    if (stgCvxFlag_) {
-     gradient_[curJ] += stgCvxCoeff_*dualVar_[curJ];
-
-     stgTerm += pow(dualVar_[curJ],2);
-    }
-
    } // for labelJ
   } //for elemJ
  } //for cliqJ
 #endif
-
- if (stgCvxFlag_) {
-  curEnergyRdx += 0.5*stgCvxCoeff_*stgTerm;
-  //std::cout<<"popGradEnergy: strong convexity term added to the energy: "<<stgTerm<<std::endl;
- }
 
  curEnergy_ = curEnergyRdx;
 
@@ -1363,19 +1337,10 @@ int dualSys::popGradEnergy(const std::vector<double> &ipVar, std::vector<double>
 
     opGrad[curJ] = -1*nodeLabSum[nodeOffsetJ[elemJ] + labelJ] + f2LabelSum[unaryOffset_[curJNode] + labelJ];
 
-    if (stgCvxFlag_) {
-     gradient_[curJ] += stgCvxCoeff_*dualVar_[curJ];
-
-     stgTerm += pow(dualVar_[curJ],2);
-    }
    } // for labelJ
   } //for elemJ
  } //for cliqJ
 #endif
-
- if (stgCvxFlag_) {
-  opFunc += 0.5*stgCvxCoeff_*stgTerm;
- }
 
  opGradNorm = myUtils::norm<double>(opGrad, nDualVar_);
 
@@ -2393,15 +2358,6 @@ double dualSys::compEnergySparse(std::vector<double> var)
 
  double stgTerm = 0;
 
- if (stgCvxFlag_) {
-  for (std::vector<double>::iterator varIter = var.begin(); varIter != var.end(); ++varIter) {
-   stgTerm += (*varIter)*(*varIter);
-  }
-
-  stgTerm *= (stgCvxCoeff_/2);
- }
-
-//#pragma omp parallel for reduction(+ : f1)
  for (int iCliq = 0; iCliq != nCliq_; ++iCliq) {
   double f1Energy = 0;
 
@@ -2427,10 +2383,6 @@ double dualSys::compEnergySparse(std::vector<double> var)
    for (std::vector<int>::iterator k = cliqPerNode_[i].begin(); k != cliqPerNode_[i].end(); ++k) {
     int nodeInd = myUtils::findNodeIndex(subProb_[*k].memNode_, i);
     dualSum += var[subProb_[*k].getCliqOffset() + subProb_[*k].getNodeOffset()[nodeInd] + j];
-
-//    if (stgCvxFlag_) {
-//     stgTerm += 0.5*stgCvxCoeff_*pow(var[subProb_[*k].getCliqOffset() + subProb_[*k].getNodeOffset()[nodeInd] + j],2);
-//    }
    }
 
    f2Whole[j] = uEnergy_[unaryOffset_[i] + j] + dualSum;
@@ -2456,11 +2408,6 @@ double dualSys::compEnergySparse(std::vector<double> var)
  }
 
  double returnVal = f1 + (1/tau_)*f2;
-
- if (stgCvxFlag_) {
-  returnVal += stgTerm;
-  std::cout<<"compEnergySparse: strong convexity term added to the energy: "<<stgTerm<<std::endl;
- }
 
  if (isinf(returnVal)) {
   std::cout<<"compEnergySparse: energy is INF"<<std::endl;
@@ -2552,10 +2499,6 @@ double dualSys::compEnergy(std::vector<double> var)
    for (std::vector<int>::iterator k = cliqPerNode_[i].begin(); k != cliqPerNode_[i].end(); ++k) {
     int nodeInd = myUtils::findNodeIndex(subProb_[*k].memNode_, i);
     dualSum += var[subProb_[*k].getCliqOffset() + subProb_[*k].getNodeOffset()[nodeInd] + j];
-
-    if (stgCvxFlag_) {
-     stgTerm += 0.5*stgCvxCoeff_*pow(var[subProb_[*k].getCliqOffset() + subProb_[*k].getNodeOffset()[nodeInd] + j],2);
-    }
    }
 
    f2Whole[j] = uEnergy_[unaryOffset_[i] + j] + dualSum;
@@ -2581,11 +2524,6 @@ double dualSys::compEnergy(std::vector<double> var)
  }
 
  double returnVal = (1/tau_)*(f1 + f2);
-
- if (stgCvxFlag_) {
-  returnVal += stgTerm;
-  //std::cout<<"compEnergy: strong convexity term added to the energy: "<<stgTerm<<std::endl;
- }
 
  std::cout<<"compEnergy: f1 "<<(1/tau_)*f1<<" f2 "<<(1/tau_)*f2<<std::endl;
 
@@ -3642,7 +3580,6 @@ int dualSys::solveFista() {
    std::cout<<std::flush;
 
    tau_ *= tauScale_;
-   stgCvxCoeff_ /= tauScale_;
 
    gradDampFlag = true;
    L = L0; //resetting L ####
@@ -3787,7 +3724,6 @@ int dualSys::solveFista() {
 
    if (cntIter % cntInterval == 0) {
     std::cout<<"ITERATION "<<cntIter<<" took "<<myUtils::getTime() - tFull<<" seconds. Gradient norm "<<gradNorm<<" Gradient max "<<gradMax<<" Gradient based threshold "<<gradBasedDamp<<" Smoothing "<<tau_<<" L "<<L<<std::endl;
-    std::cout<<"strong convexity coefficient "<<stgCvxCoeff_<<std::endl;
 
     double tEnergy = myUtils::getTime();
 
@@ -3900,7 +3836,6 @@ int dualSys::solveSCD()
    std::cout<<"Annealing: grad norm "<<gradNorm<<" grad based damp "<<gradBasedDamp<<std::endl;
    cntIterTau = 1;
    tau_ *= tauScale_;
-   stgCvxCoeff_ /= tauScale_;
    //gradDampFlag = true;
 
    //updateMSD(cntIter);
@@ -3997,7 +3932,6 @@ int dualSys::solveSCD()
    std::cout<<"solveSCD: ITERATION "<<cntIter<<". Tau "<<tau_<<" and gradient threshold "<<gradBasedDamp<<".";
    std::cout<<" Current iteration took "<<(myUtils::getTime() - tFull)<<" seconds.";
    std::cout<<" Gradient: l-infinity: "<<gradMax<<", Euclidean: "<<gradNorm<<". Energy: "<<curEnergy_;
-   std::cout<<"Strong convexity coefficient "<<stgCvxCoeff_;
    std::cout<<std::endl;
 
    double tEnergy = myUtils::getTime();

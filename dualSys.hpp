@@ -17,7 +17,7 @@ void precnd_(int *n, int *m, int* iop, int* iprob, int* jcg, double* s, double* 
 class dualSys {
  public:
   friend int matVecMult(const dualSys &, const std::vector<double> &, std::vector<double> &);
-  dualSys(int, std::vector<short>, double, double, int, int, bool);
+  dualSys(int, std::vector<short>, double, int, int);
 
   int addNode(int, std::vector<double>);
   int addCliq(const std::vector<int>&, std::vector<double> *);
@@ -86,9 +86,6 @@ class dualSys {
   bool pdInitFlag_;
   double pdGap_;
   int smallGapIterCnt_;
-
-  bool stgCvxFlag_;
-  double stgCvxCoeff_;
 
   int popGradHessEnergy(int);
   int popGradHessEnergyPerf(int);
