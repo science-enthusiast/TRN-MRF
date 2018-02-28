@@ -83,11 +83,6 @@ int main(int argc, char* argv[])
 
  typedef opengm::external::AD3Inf<GmType,opengm::Minimizer> AD3SolverType;
 
-// if (argc < 6) {
-//  std::cout<<"USAGE: ./newtonTest <i/p file name> <no. of clique tables: 1 (one global) or 0 (individual)> <method N (Newton) F (Fista) L (LM)><input: uai y or in program n> <output flag>"<<std::endl;
-//  return -1;
-// }
-
  if (argc < 2) {
   std::cout<<"USAGE: ./newtonTest <name of configuration file>"<<std::endl;
 
@@ -100,7 +95,6 @@ int main(int argc, char* argv[])
 
  while (std::getline(fin, line)) {
   std::string varValue(line.substr(line.find("=")+1));
-  //std::transform(varValue.begin(), varValue.end(), varValue.begin(), ::tolower);
 
   sin.str(varValue);
 
@@ -239,10 +233,7 @@ int main(int argc, char* argv[])
    else {
     sin.clear();
     sin.str(curLine);
-    //std::cout<<"current line "<<curLine<<std::endl;
     sin>>sizCliq;
-
-    //std::cout<<"clique size "<<sizCliq<<std::endl;
 
     int nodeInd;
     std::vector<int> curNodes;
@@ -279,7 +270,6 @@ int main(int argc, char* argv[])
    sin.clear();
    sin.str(curLine);
    sin>>nCliqLab;
-   //std::cout<<"no. of labelings "<<nCliqLab<<" ";
 
    if ((*cliqInd).size() == 1) { //Clique could be one node. Unaries to be populated.
     std::getline(uaiFile,curLine);
@@ -290,7 +280,6 @@ int main(int argc, char* argv[])
     std::vector<double> uEnergy;
 
     while (sin>>uVal) {
-     //std::cout<<uVal<<" ";
 
      double logVal = log(uVal);
      myUtils::checkLogError(logVal);
@@ -641,7 +630,7 @@ int main(int argc, char* argv[])
    std::cout<<"cliqNodes size is "<<cliqNodes.size()<<std::endl;
   }
   else if (mrfModel.compare("spgraphmatch") == 0) {
-   std::string quPtsFile = "/home/hari/softwares/2d_graph_match/" + ipFile + "ptsqu.txt";
+   std::string quPtsFile = "2d_graph_match/" + ipFile + "ptsqu.txt";
 
    std::ifstream ipPtsTuple(quPtsFile.c_str());
 

@@ -933,7 +933,7 @@ int popHighStereoEnergies(int nRow, int nCol, int nLabel, const std::vector<doub
 
   std::vector<double> propValVec;
 
-#if 1
+#if 0
   std::ifstream propStream(propFile);
 
   double propVal;
