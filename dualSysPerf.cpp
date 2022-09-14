@@ -14,7 +14,8 @@
 #include <random>
 #include <limits>
 #include <numeric>
-#include "dualSys.hpp"
+
+#include "dual_sys.h"
 #include "myUtils.hpp"
 #include "hessVecMult.hpp"
 #include "quasiNewton.hpp"

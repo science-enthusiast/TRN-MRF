@@ -1,9 +1,12 @@
 #ifndef MYUTILS_HPP
 #define MYUTILS_HPP
 #include <cmath>
-#include <iostream>
 #include <cerrno>
 #include <sys/time.h>
+
+#include <iostream>
+#include <vector>
+
 #include <Eigen/Dense>
 
 namespace myUtils

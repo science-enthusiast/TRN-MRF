@@ -1,6 +1,7 @@
 #include "myUtils.hpp"
+
 #include <algorithm>
-#include <vector>
+
 namespace myUtils
 {
 

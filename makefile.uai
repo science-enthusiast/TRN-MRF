@@ -1,4 +1,4 @@
-OBJS = dualSys.o newtonTest.o ICFS.o myUtils.o quasiNewton.o
+OBJS = dual_sys.o newtonTest.o ICFS.o myUtils.o quasiNewton.o
 CC = g++
 DEBUG = -g
 DFLAGS = -ggdb
@@ -19,8 +19,8 @@ newtonTest : $(OBJS)
 myUtils.o : myUtils.cpp myUtils.hpp
 	$(CC) $(CFLAGS) myUtils.cpp
 
-dualSys.o : dualSys.cpp dualSys.hpp myUtils.hpp ICFS.h
-	$(CC) $(CFLAGS) dualSys.cpp
+dual_sys.o : dual_sys.cpp dual_sys.h myUtils.hpp ICFS.h
+	$(CC) $(CFLAGS) dual_sys.cpp
 
 ICFS.o : ICFS.cpp ICFS.h
 	$(CC) $(CFLAGS) ICFS.cpp
@@ -28,7 +28,7 @@ ICFS.o : ICFS.cpp ICFS.h
 quasiNewton.o: quasiNewton.cpp quasiNewton.hpp
 	$(CC) $(CFLAGS) quasiNewton.cpp
 
-newtonTest.o : newtonTest.cpp dualSys.hpp myUtils.hpp
+newtonTest.o : newtonTest.cpp dual_sys.hpp myUtils.hpp
 	$(CC) $(CFLAGS) newtonTest.cpp
 
 clean:

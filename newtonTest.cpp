@@ -1,27 +1,18 @@
-#include "dualSys.hpp"
-#include "myUtils.hpp"
+#include <cmath>
+#include <cstdio>
+#include <ctime>
+
 #include <iostream>
 #include <fstream>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <utility>
-#include <cstdio>
-#include <ctime>
-#include <cmath>
-#include "variousEnergies.hpp"
 
-#include <opengm/graphicalmodel/graphicalmodel.hxx>
-#include <opengm/graphicalmodel/graphicalmodel_hdf5.hxx>
-#include <opengm/operations/minimizer.hxx>
-#include <opengm/operations/adder.hxx>
-#include <opengm/functions/explicit_function.hxx>
-#include <opengm/functions/sparsemarray.hxx>
-#include <opengm/functions/potts.hxx>
-#include <opengm/functions/pottsn.hxx>
-#include <opengm/functions/pottsg.hxx>
-#include "opengm/functions/truncated_absolute_difference.hxx"
-#include "opengm/functions/truncated_squared_difference.hxx"
-#include <opengm/inference/external/ad3.hxx>
+#include "dual_sys.h"
+#include "myUtils.hpp"
+#include "solvers/solve_scd.h"
+#include "variousEnergies.hpp"
 
 void populateCliqLab(int, int, std::vector<std::vector<int> > &);
 
@@ -52,37 +43,12 @@ int main(int argc, char* argv[])
  bool sparseFlag;
  bool oneCliqTable = false;
 
- std::unique_ptr<dualSys> myDual; //the most important object, containing unaries, cliques, dual variables etc
+ std::unique_ptr<DualSys> myDual; //the most important object, containing unaries, cliques, dual variables etc
 
  double tau = 1;
  int maxIter = 10000, annealIval = 1; //annealIval = -1: no annealing
 
  double unaryScale = 1;
-
- typedef opengm::Adder OperatorType;
- typedef opengm::DiscreteSpace<std::size_t, std::size_t> SpaceType;
-
- // Set functions for graphical model
- typedef opengm::meta::TypeListGenerator<
-         opengm::ExplicitFunction<double, std::size_t, std::size_t>,
-         opengm::PottsFunction<double, std::size_t, std::size_t>,
-         opengm::PottsNFunction<double, std::size_t, std::size_t>,
-         opengm::PottsGFunction<double, std::size_t, std::size_t>,
-         opengm::TruncatedSquaredDifferenceFunction<double, std::size_t, std::size_t>,
-         opengm::TruncatedAbsoluteDifferenceFunction<double, std::size_t, std::size_t>,
-         opengm::SparseFunction<double, std::size_t, std::size_t>
-         >::type FunctionTypeList;
-
- typedef opengm::GraphicalModel<
-   double,
-   OperatorType,
-   FunctionTypeList,
-   SpaceType
-   > GmType;
-
- GmType gm;
-
- typedef opengm::external::AD3Inf<GmType,opengm::Minimizer> AD3SolverType;
 
  if (argc < 2) {
   std::cout<<"USAGE: ./newtonTest <name of configuration file>"<<std::endl;
@@ -178,7 +144,7 @@ int main(int argc, char* argv[])
   }
 
   sin.clear();
- }
+ } // while (std::getline(fin, line)) 
 
  algoName.assign(argv[2]);
 
@@ -222,7 +188,7 @@ int main(int argc, char* argv[])
   sin.str(curLine);
   sin>>totCliq;
 
-  myDual = std::make_unique<dualSys>(nNode, nLabel, tau, maxIter, annealIval);
+  myDual = std::make_unique<DualSys>(nNode, nLabel, tau, maxIter, annealIval);
 
   bool readNodeList = true;
 
@@ -425,169 +391,6 @@ int main(int argc, char* argv[])
    }
   }
  } //if (ipType.compare("uai") == 0) 
- else if (ipType.compare("hdf5") == 0) {
-  opengm::hdf5::load(gm,ipFile,"gm");
-
-  if (algoName.compare("ad3") != 0) {
-   nNode = gm.numberOfVariables();
-
-   std::cout<<"Number of nodes "<<nNode<<std::endl;
-
-   nLabel.resize(nNode);
-
-   for (int n = 0; n != nNode; ++n) {
-    nLabel[n] = gm.numberOfLabels(n);
-   }
-
-   myDual = std::make_unique<dualSys>(nNode, nLabel, tau, maxIter, annealIval);
-
-   std::cout<<"Number of factors "<<gm.numberOfFactors()<<std::endl;
-
-   if (sparseFlag) {
-    sparseKappa.resize(gm.numberOfFactors());
-    sparseEnergies.resize(gm.numberOfFactors());
-    sparseIndices.resize(gm.numberOfFactors());
-   }
-   else {
-    cEnergyVec.resize(gm.numberOfFactors());
-   }
-
-   for (std::size_t f = 0; f != gm.numberOfFactors(); ++f) {
-    if (gm[f].numberOfVariables() == 1) {
-
-     std::size_t l[1] = {0};
-     std::vector<double> uEnergy;
-     for (l[0] = 0; l[0] != gm[f].numberOfLabels(0); ++l[0]) {
-      uEnergy.push_back(-1*unaryScale*gm[f](l));
-     }
-
-     myDual->addNode(gm[f].variableIndex(0),uEnergy);
-    } //unary potentials
-    else {
-     if (sparseFlag) { //the clique energies are sparse. Each clique will have its own copy of clique energies.
-      sparseKappa[f] = 10000;
-      sparseEnergies[f].clear();
-      sparseIndices[f].clear();
-      curCEnergy.clear();
-
-      double maxEnergy = -10000;
-      double minEnergy = 10000;
-
-      int sizCliq = gm[f].numberOfVariables();
-      rCliq = 1;
-      cCliq = sizCliq;
-
-      std::vector<int> cliqVar(sizCliq);
-
-      int nCliqLab = 1;
-
-      for (int i = 0; i != sizCliq; ++i) {
-       nCliqLab *= gm[f].numberOfLabels(i);
-       cliqVar[i] = gm[f].variableIndex(i);
-      }
-
-      for (int iCliqLab = 0; iCliqLab != nCliqLab; ++iCliqLab) {
-       std::vector<size_t> lab(sizCliq);
-
-       double labPull = nCliqLab;
-
-       for (int j = 0; j != sizCliq; ++j) {
-        int curNumLab = gm[f].numberOfLabels(j);
-
-        labPull /= curNumLab;
-
-        int labPullTwo = ceil((iCliqLab+1)/labPull);
-
-        if (labPullTwo % curNumLab == 0) {
-         lab[j] = curNumLab - 1;
-        }
-        else {
-         lab[j] = (labPullTwo % curNumLab) - 1;
-        }
-       }
-
-       double curCEVal = -1*gm[f](lab); //performing primal maximization; dual minimization.
-
-       curCEnergy.push_back(curCEVal);
-
-       if (curCEVal > maxEnergy) {
-        maxEnergy = curCEVal;
-       }
-
-       if (curCEVal < minEnergy) {
-        minEnergy = curCEVal;
-       }
-
-       if (sparseKappa[f] > curCEVal) {
-        sparseKappa[f] = curCEVal;
-       }
-
-      } //for iCliqLab
-
-      for (int iCliqLab = 0; iCliqLab != nCliqLab; ++iCliqLab) {
-       if (curCEnergy[iCliqLab] != sparseKappa[f]) {
-        sparseEnergies[f][iCliqLab] = curCEnergy[iCliqLab];
-        sparseIndices[f].insert(iCliqLab);
-       }
-      } //for iCliqLab
-
-      std::cout<<f<<" clique variables are";
-      for (std::vector<int>::const_iterator iVar = cliqVar.begin(); iVar != cliqVar.end(); ++iVar) {
-       std::cout<<" "<<*iVar;
-      }
-      std::cout<<std::endl;
-
-      myDual->addCliq(cliqVar, rCliq, cCliq, &sparseKappa[f], &sparseEnergies[f], &sparseIndices[f]);
-     } //if sparseFlag
-     else { //clique potentials are stored in a dense manner
-      int sizCliq = gm[f].numberOfVariables();
-      std::vector<int> cliqVar(sizCliq);
-
-      int nCliqLab = 1;
-
-      for (int i = 0; i != sizCliq; ++i) {
-       nCliqLab *= gm[f].numberOfLabels(i);
-       cliqVar[i] = gm[f].variableIndex(i);
-      }
-
-//      if (oneCliqTable) {
-//       curCEnergy.clear();
-
-      cEnergyVec[f].clear();
-
-      for (int iCliqLab = 0; iCliqLab != nCliqLab; ++iCliqLab) {
-       std::size_t* lab = new std::size_t[sizCliq];
-
-       double labPull = nCliqLab;
-
-       for (int j = 0; j != sizCliq; ++j) {
-        int curNumLab = gm[f].numberOfLabels(j);
-
-        labPull /= curNumLab;
-
-        int labPullTwo = ceil((iCliqLab+1)/labPull);
-
-        if (labPullTwo % curNumLab == 0) {
-         lab[j] = curNumLab - 1;
-        }
-        else {
-         lab[j] = (labPullTwo % curNumLab) - 1;
-        }
-       }
-
-       cEnergyVec[f].push_back(-gm[f](lab));
-      } //for iCliqLab
-
-//       oneCliqTable = false;
-//      }
-
-      myDual->addCliq(cliqVar, &cEnergyVec[f]);
-     }
-    } //clique potentials
-
-   }
-  } //if (algoName.compare("ad3") != 0) 
- } //else if (ipType.compare("hdf5") == 0) 
  else { //INPUT: energies defined in code
   std::vector<double> pixVals;
   std::vector<double> pixValsStereo;
@@ -670,7 +473,7 @@ int main(int argc, char* argv[])
    std::cout<<"pixel values loaded."<<std::endl;
   }
 
-  myDual = std::make_unique<dualSys>(nNode, nLabel, tau, maxIter, annealIval);
+  myDual = std::make_unique<DualSys>(nNode, nLabel, tau, maxIter, annealIval);
 
   if ((mrfModel.compare("var") == 0) || (mrfModel.compare("spden1") == 0) || (mrfModel.compare("spden2") == 0) || (mrfModel.compare("spden3") == 0) || (mrfModel.compare("sqdiff") == 0) || (mrfModel.compare("spvar") == 0) || (mrfModel.compare("spvarcom") == 0)) {
    for (int i = 0; i != nNode; ++i) {
@@ -857,7 +660,7 @@ int main(int argc, char* argv[])
    myDual->solveFista();
   }
   else if (algoName.compare("scd") == 0) {
-   myDual->solveSCD();
+    SolveSCD::solve(myDual.get());
   }
   else {
    std::cout<<"Enter algorithm option correctly."<<std::endl;
@@ -867,26 +670,6 @@ int main(int argc, char* argv[])
   primalMax = myDual->getPrimalMax();
 
   std::cout<<"Time taken to reach best integral primal "<<myDual->getTimeToBestPrimal()<<std::endl;
- }
- else if (algoName.compare("ad3") == 0) {
-
-  nNode = gm.numberOfVariables();
-
-  AD3SolverType::Parameter paraAD3;
-
-  paraAD3.solverType_ = AD3SolverType::AD3_LP;
-
-  paraAD3.steps_ = maxIter;
-
-  AD3SolverType ad3(gm,paraAD3);
-
-  AD3SolverType::VerboseVisitorType visitor;
-
-  ad3.infer(visitor);
-
-  ad3.arg(primalMax);
-
-  std::cout<<"output labeling has energy: "<<gm.evaluate(primalMax)<<std::endl;
  }
  else {
   std::cout<<"Enter algorithm option correctly. trn Newton, fista FISTA, lm Levenberg-Marquardt, qn Quasi Newton"<<std::endl;

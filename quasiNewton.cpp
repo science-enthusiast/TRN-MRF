@@ -1,4 +1,5 @@
 #include "quasiNewton.hpp"
+
 #include <iostream>
 
 quasiNewton::quasiNewton(int memSiz):offRing_(-2), memSiz_(memSiz)
@@ -30,14 +31,14 @@ Eigen::VectorXd quasiNewton::solve(const Eigen::VectorXd &gradient, const Eigen:
 
    alpha[memSiz_-1-i] = rho_[iRing]*sArr_[iRing].dot(gradient);
 
-   if (isnan(alpha[memSiz_-1-i])) {
+   if (std::isnan(alpha[memSiz_-1-i])) {
     std::cout<<"alpha IS NAN!"<<std::endl;
    }
 
    q = q - alpha[memSiz_-1-i]*yArr_[iRing];
 
    for (int i = 0; i != q.size(); ++i) {
-    if (isnan(q[i])) {
+    if (std::isnan(q[i])) {
      std::cout<<"ELEMENT OF q IS NAN!"<<std::endl;
 
      std::cout<<"alpha is "<<alpha[memSiz_-1-i]<<std::endl;
@@ -51,7 +52,7 @@ Eigen::VectorXd quasiNewton::solve(const Eigen::VectorXd &gradient, const Eigen:
   }
 
   for (int i = 0; i != q.size(); ++i) {
-   if (isnan(q[i])) {
+   if (std::isnan(q[i])) {
     std::cout<<"ELEMENT OF q IS NAN!"<<std::endl;
    }
   }
@@ -59,7 +60,7 @@ Eigen::VectorXd quasiNewton::solve(const Eigen::VectorXd &gradient, const Eigen:
   r = precond(q);
 
   for (int i = 0; i != r.size(); ++i) {
-   if (isnan(r[i])) {
+   if (std::isnan(r[i])) {
     std::cout<<"ELEMENT OF r IS NAN!"<<std::endl;
    }
   }
@@ -76,7 +77,7 @@ Eigen::VectorXd quasiNewton::solve(const Eigen::VectorXd &gradient, const Eigen:
   }
 
   for (int i = 0; i != r.size(); ++i) {
-   if (isnan(r[i])) {
+   if (std::isnan(r[i])) {
     std::cout<<"ELEMENT OF r IS NAN!"<<std::endl;
    }
   }
@@ -105,18 +106,18 @@ Eigen::VectorXd quasiNewton::solve(const Eigen::VectorXd &gradient, const Eigen:
   rho_[offRing_] = 1/yArr_[offRing_].dot(sArr_[offRing_]);
 
   for (int i = 0; i != sArr_[offRing_].size(); ++i) {
-   if (isnan(sArr_[offRing_][i])) {
+   if (std::isnan(sArr_[offRing_][i])) {
     std::cout<<"ELEMENT OF sArr IS NAN!"<<std::endl;
    }
   }
 
   for (int i = 0; i != yArr_[offRing_].size(); ++i) {
-   if (isnan(yArr_[offRing_][i])) {
+   if (std::isnan(yArr_[offRing_][i])) {
     std::cout<<"ELEMENT OF yArr IS NAN!"<<std::endl;
    }
   }
 
-  if (isinf(rho_[offRing_])) {
+  if (std::isinf(rho_[offRing_])) {
    std::cout<<"rho_ IS INF!"<<std::endl;
 
    std::cout<<"sArr_ ";
@@ -145,7 +146,7 @@ Eigen::VectorXd quasiNewton::precond(Eigen::VectorXd q)
 {
  Eigen::VectorXd r;
 
- if (isinf(scaleParam_)) {
+ if (std::isinf(scaleParam_)) {
   std::cout<<"Scale parameter is infinity."<<std::endl;
  }
 

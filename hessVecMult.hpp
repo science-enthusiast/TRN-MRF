@@ -1,8 +1,8 @@
 #include <vector>
-#include "dualSys.hpp"
+#include "dual_sys.h"
 #include "subProblem.hpp"
 
-int matVecMult(const dualSys &myDual, const std::vector<double> &multVec, std::vector<double> &retVec) {
+int matVecMult(const DualSys &myDual, const std::vector<double> &multVec, std::vector<double> &retVec) {
 
  int nNode = myDual.nNode_;
  int numLabTot = myDual.numLabTot_;
