@@ -27,8 +27,7 @@ void populateCliqLab(int, int, std::vector<std::vector<int> > &);
 
 int populateNodeCliqLists(int, int, int, int, std::vector<std::vector<int> > &);
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
  std::string ipFile, ipStereoFile;
  int nNode;
  std::vector<short> nLabel;
@@ -179,8 +178,6 @@ int main(int argc, char* argv[])
 
   sin.clear();
  }
-
- algoName.assign(argv[2]);
 
  logLabel += algoName;
 

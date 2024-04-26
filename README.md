@@ -9,9 +9,9 @@ IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2017.
 
 The additional libraries required are:
 
-1. opengm.
-2. eigen.
-3. openmp.
+1. OpenGM (depends on HDF5).
+2. Eigen.
+3. OpenMP.
 
 The executable (newtonTest) is created by running the Makefile.
 
@@ -31,7 +31,7 @@ e.g., Input type = hdf5
 
 2. Input name
 
-It can be the name of the hdf5 or uai file or the input image (as a txt file) for code based input.
+It can be the name of the hdf5 file or the uai file or the input image (as a txt file for code based input).
 
 e.g., Input name = graph_match_1.h5
 

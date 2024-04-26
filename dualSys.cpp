@@ -25,7 +25,6 @@
 #include "cliqSPSparseSCD.hpp"
 #include "polyInterp.h"
 #include <Eigen/IterativeLinearSolvers>
-#include <unsupported/Eigen/src/IterativeSolvers/IncompleteCholesky.h>
 #include <Eigen/src/Core/util/Constants.h>
 
 int debugEigenVec(Eigen::VectorXd);
@@ -474,7 +473,7 @@ int dualSys::popGradHessEnergyPerf(int cntIter) {
 
     gradient_[curJ] = -1*nodeLabSum[nodeOffsetJ[elemJ] + labelJ] + f2LabelSum[unaryOffset_[curJNode] + labelJ];
 
-    if (isnan(gradient_[curJ])) {
+    if (std::isnan(gradient_[curJ])) {
      std::cout<<"GRADIENT ENTRY IS NAN!"<<std::endl;
      //return -1;
     }
@@ -563,7 +562,7 @@ int dualSys::popGradHessEnergyPerf(int cntIter) {
 
  //std::cout<<"Hessian matrix: max element "<<maxElem<<" min element "<<minElem<<std::endl;
 
- if (isnan(curEnergy_)) {
+ if (std::isnan(curEnergy_)) {
   std::cout<<"ENERGY INDEED NAN!"<<std::endl;
   return -1;
  }
@@ -749,7 +748,7 @@ int dualSys::popGradHessEnergy(int cntIter) {
 
     gradient_[curJ] = -1*nodeLabSum[nodeOffsetJ[elemJ] + labelJ] + f2LabelSum[unaryOffset_[curJNode] + labelJ];
 
-    if (isnan(gradient_[curJ])) {
+    if (std::isnan(gradient_[curJ])) {
      std::cout<<"GRADIENT ENTRY IS NAN!"<<std::endl;
 
      return -1;
@@ -877,7 +876,7 @@ int dualSys::popGradHessEnergy(int cntIter) {
 
  //std::cout<<"Hessian matrix: max element "<<maxElem<<" min element "<<minElem<<std::endl;
 
- if (isnan(curEnergy_)) {
+ if (std::isnan(curEnergy_)) {
   std::cout<<"ENERGY INDEED NAN!"<<std::endl;
   return -1;
  }
@@ -1057,7 +1056,7 @@ int dualSys::popGradEnergyFista() {
 
  //std::cout<<std::endl;
 
- if (isnan(curEnergy_)) {
+ if (std::isnan(curEnergy_)) {
   std::cout<<"ENERGY INDEED NAN!"<<std::endl;
   return -1;
  }
@@ -1216,7 +1215,7 @@ int dualSys::popGradEnergy() {
    cliqSPSparseGradEnergy(&subProb_[cliqJ], dualVar, tau_, subEnergy, nodeLabSum);
    curEnergyRdx += subEnergy;
 
-   if (isnan(curEnergy_)) {
+   if (std::isnan(curEnergy_)) {
     std::cout<<"ENERGY INDEED NAN!"<<std::endl;
     return -1;
    }
@@ -1236,7 +1235,7 @@ int dualSys::popGradEnergy() {
 
  curEnergy_ = curEnergyRdx;
 
- if (isnan(curEnergy_)) {
+ if (std::isnan(curEnergy_)) {
   std::cout<<"ENERGY INDEED NAN!"<<std::endl;
   return -1;
  }
@@ -1337,7 +1336,7 @@ int dualSys::popGradEnergy(const std::vector<double> &ipVar, std::vector<double>
 
  opGradMax = opGrad[gradMaxInd];
 
- if (isnan(curEnergy_)) {
+ if (std::isnan(curEnergy_)) {
   std::cout<<"ENERGY INDEED NAN!"<<std::endl;
   return -1;
  }
@@ -1758,7 +1757,7 @@ int dualSys::solveNewton()
 
    double rho = (nxtEnergy - curEnergy_)/nxtApproxEnergyDiff;
 
-   if ((isnan(rho)) || (isinf(rho))) {
+   if ((std::isnan(rho)) || (std::isinf(rho))) {
     std::cout<<"rho debug: nxtApproxEnergyDiff "<<nxtApproxEnergyDiff<<" nxtEnergy "<<nxtEnergy<<" curEnergy_ "<<curEnergy_<<std::endl;
    }
 
@@ -2142,7 +2141,7 @@ int dualSys::solveQuasiNewton()
    eigenStep = quasiNewtonSolver.solve(eigenGrad_, eigenDualVar, 0, cntIterTau);
 
    for (std::size_t i = 0; i != nDualVar_; ++i) {
-    if (isnan(eigenStep[i])) {
+    if (std::isnan(eigenStep[i])) {
      std::cout<<"an element of quasi newton step is nan"<<std::endl;
      return -1;
     }
@@ -2187,7 +2186,7 @@ int dualSys::solveQuasiNewton()
 
    double rho = (nxtEnergy - curEnergy_)/nxtApproxEnergyDiff;
 
-   if ((isnan(rho)) || (isinf(rho))) {
+   if ((std::isnan(rho)) || (std::isinf(rho))) {
     std::cout<<"rho debug: nxtApproxEnergyDiff "<<nxtApproxEnergyDiff<<" nxtEnergy "<<nxtEnergy<<" curEnergy_ "<<curEnergy_<<std::endl;
    }
 
@@ -2396,10 +2395,10 @@ double dualSys::compEnergySparse(std::vector<double> var)
 
  double returnVal = f1 + (1/tau_)*f2;
 
- if (isinf(returnVal)) {
+ if (std::isinf(returnVal)) {
   std::cout<<"compEnergySparse: energy is INF"<<std::endl;
  }
- else if (isnan(returnVal)) {
+ else if (std::isnan(returnVal)) {
   std::cout<<"compEnergySparse: energy is NAN!"<<std::endl;
  }
 
@@ -2443,7 +2442,7 @@ double dualSys::compEnergy(std::vector<double> var)
 
    for (int k = 0; k != sizCliq; ++k) {
     dualSum += var[subProb_[i].getCliqOffset() + nodeOffset[k] + cliqLab[k]];
-    if (isnan(dualSum)) {
+    if (std::isnan(dualSum)) {
      std::cout<<"F1 DUAL SUM IS NAN! dual variable is "<<var[subProb_[i].getCliqOffset() + nodeOffset[k] + cliqLab[k]]<<std::endl;
     }
    }
@@ -2512,10 +2511,10 @@ double dualSys::compEnergy(std::vector<double> var)
 
  std::cout<<"compEnergy: f1 "<<(1/tau_)*f1<<" f2 "<<(1/tau_)*f2<<std::endl;
 
- if (isinf(returnVal)) {
+ if (std::isinf(returnVal)) {
   std::cout<<"compEnergy: energy is INF"<<std::endl;
  }
- else if (isnan(returnVal)) {
+ else if (std::isnan(returnVal)) {
   std::cout<<"compEnergy: energy is NAN!"<<std::endl;
  }
 
@@ -3011,7 +3010,7 @@ double dualSys::compSmoothPrimalEnergy()
   for (int j = 0; j != nCliqLab; ++j) {
    logVal = log(subProb_[i].primalCliqConsist_[j]);
 
-   if ((errno == ERANGE) || (isnan(logVal))) {
+   if ((errno == ERANGE) || (std::isnan(logVal))) {
     entropyTerm = 0;
     errno = 0;
    }
@@ -3020,7 +3019,7 @@ double dualSys::compSmoothPrimalEnergy()
    }
 
    energy += subProb_[i].getCE(j)*subProb_[i].primalCliqConsist_[j] + (1/tau_)*entropyTerm;
-   if ((isnan(energy)) && (probCliqCnt == 0)) {
+   if ((std::isnan(energy)) && (probCliqCnt == 0)) {
     ++probCliqCnt;
    }
   } //for j
@@ -3032,7 +3031,7 @@ double dualSys::compSmoothPrimalEnergy()
   for (int j = 0; j != nLabel; ++j) {
    logVal = log(primalConsist_[unaryOffset_[i] + j]);
 
-   if ((errno == ERANGE) || (isnan(logVal))) {
+   if ((errno == ERANGE) || (std::isnan(logVal))) {
     entropyTerm = 0;
     errno = 0;
    }
@@ -3041,7 +3040,7 @@ double dualSys::compSmoothPrimalEnergy()
    }
 
    energy += uEnergy_[unaryOffset_[i] + j]*primalConsist_[unaryOffset_[i] + j] + (1/tau_)*entropyTerm;
-   if ((isnan(energy)) && (probNodeCnt == 0)) {
+   if ((std::isnan(energy)) && (probNodeCnt == 0)) {
     ++probNodeCnt;
    }
   }
@@ -3061,7 +3060,7 @@ double dualSys::compNonSmoothPrimalEnergy()
   for (int iCliqLab = 0; iCliqLab != nCliqLab; ++iCliqLab) {
 
    energy += subProb_[i].getCE(iCliqLab)*primalCliqConsist[iCliqLab];
-   if (isnan(energy)) {
+   if (std::isnan(energy)) {
     std::cout<<"clique "<<i<<" cEnergy "<<subProb_[i].getCE(iCliqLab)<<" primalCliqConsist "<<primalCliqConsist[iCliqLab]<<std::endl;
    }
   }
@@ -3072,7 +3071,7 @@ double dualSys::compNonSmoothPrimalEnergy()
 
   for (int j = 0; j != nLabel; ++j) {
    energy += uEnergy_[unaryOffset_[i] + j]*primalConsist_[unaryOffset_[i] + j];
-   if (isnan(energy)) {
+   if (std::isnan(energy)) {
     std::cout<<"node "<<i<<" uEnergy "<<uEnergy_[unaryOffset_[i] + j]<<" primalConsist "<<primalConsist_[unaryOffset_[i] + j]<<std::endl;
    }
   }
@@ -4609,7 +4608,7 @@ int dualSys::solveTrueLM()
 
    double rho = (nxtEnergy - curEnergy_)/nxtApproxEnergyDiff;
 
-   if ((isnan(rho)) || (isinf(rho))) {
+   if ((std::isnan(rho)) || (std::isinf(rho))) {
     std::cout<<"rho debug: nxtApproxEnergyDiff "<<nxtApproxEnergyDiff<<" nxtEnergy "<<nxtEnergy<<" curEnergy_ "<<curEnergy_<<std::endl;
    }
 
