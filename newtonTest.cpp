@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <cstdio>
 #include <ctime>
 #include <cmath>
@@ -51,7 +52,7 @@ int main(int argc, char* argv[])
  bool sparseFlag;
  bool oneCliqTable = false;
 
- dualSys* myDual;
+ std::unique_ptr<dualSys> myDual; //the most important object, containing unaries, cliques, dual variables etc
 
  double tau = 1;
  int maxIter = 10000, annealIval = 1; //annealIval = -1: no annealing
@@ -221,7 +222,7 @@ int main(int argc, char* argv[])
   sin.str(curLine);
   sin>>totCliq;
 
-  myDual = new dualSys(nNode, nLabel, tau, maxIter, annealIval);
+  myDual = std::make_unique<dualSys>(nNode, nLabel, tau, maxIter, annealIval);
 
   bool readNodeList = true;
 
@@ -423,7 +424,7 @@ int main(int argc, char* argv[])
     myDual->addNode(n,uEnergy);
    }
   }
- } //if ipFlag
+ } //if (ipType.compare("uai") == 0) 
  else if (ipType.compare("hdf5") == 0) {
   opengm::hdf5::load(gm,ipFile,"gm");
 
@@ -438,7 +439,7 @@ int main(int argc, char* argv[])
     nLabel[n] = gm.numberOfLabels(n);
    }
 
-   myDual = new dualSys(nNode, nLabel, tau, maxIter, annealIval);
+   myDual = std::make_unique<dualSys>(nNode, nLabel, tau, maxIter, annealIval);
 
    std::cout<<"Number of factors "<<gm.numberOfFactors()<<std::endl;
 
@@ -451,8 +452,6 @@ int main(int argc, char* argv[])
     cEnergyVec.resize(gm.numberOfFactors());
    }
 
-   //std::cout<<"newtonTest: unary and clique energies are "<<std::endl;
-
    for (std::size_t f = 0; f != gm.numberOfFactors(); ++f) {
     if (gm[f].numberOfVariables() == 1) {
 
@@ -460,7 +459,6 @@ int main(int argc, char* argv[])
      std::vector<double> uEnergy;
      for (l[0] = 0; l[0] != gm[f].numberOfLabels(0); ++l[0]) {
       uEnergy.push_back(-1*unaryScale*gm[f](l));
-      //std::cout<<uEnergy.back()<<" ";
      }
 
      myDual->addNode(gm[f].variableIndex(0),uEnergy);
@@ -489,7 +487,7 @@ int main(int argc, char* argv[])
       }
 
       for (int iCliqLab = 0; iCliqLab != nCliqLab; ++iCliqLab) {
-       std::size_t* lab = new std::size_t[sizCliq];
+       std::vector<size_t> lab(sizCliq);
 
        double labPull = nCliqLab;
 
@@ -524,18 +522,14 @@ int main(int argc, char* argv[])
         sparseKappa[f] = curCEVal;
        }
 
-       delete []lab;
       } //for iCliqLab
 
       for (int iCliqLab = 0; iCliqLab != nCliqLab; ++iCliqLab) {
-       //std::cout<<curCEnergy[iCliqLab]<<" ";
        if (curCEnergy[iCliqLab] != sparseKappa[f]) {
         sparseEnergies[f][iCliqLab] = curCEnergy[iCliqLab];
         sparseIndices[f].insert(iCliqLab);
        }
       } //for iCliqLab
-
-      //std::cout<<" "<<sparseIndices[f].size()<<" max "<<maxEnergy<<" min "<<minEnergy<<" sparse kappa "<<sparseKappa[f];
 
       std::cout<<f<<" clique variables are";
       for (std::vector<int>::const_iterator iVar = cliqVar.begin(); iVar != cliqVar.end(); ++iVar) {
@@ -591,10 +585,9 @@ int main(int argc, char* argv[])
      }
     } //clique potentials
 
-    //std::cout<<std::endl;
    }
-  }
- }
+  } //if (algoName.compare("ad3") != 0) 
+ } //else if (ipType.compare("hdf5") == 0) 
  else { //INPUT: energies defined in code
   std::vector<double> pixVals;
   std::vector<double> pixValsStereo;
@@ -644,15 +637,13 @@ int main(int argc, char* argv[])
     curPtsStream>>curPts[1];
     curPtsStream>>curPts[2];
 
-    //std::cout<<curPts[0]<<" "<<curPts[1]<<" "<<curPts[2]<<std::endl;
-
     cliqNodes.push_back(curPts);
-   }
+   } //while
 
    nCliq = cliqNodes.size();
 
    std::cout<<"no. of cliques "<<nCliq<<std::endl;
-  }
+  } //else if
 
   std::ifstream ipImgFile(ipFile);
   std::string imgRow;
@@ -679,9 +670,7 @@ int main(int argc, char* argv[])
    std::cout<<"pixel values loaded."<<std::endl;
   }
 
-  //cliqNodes.resize(nCliq);
-
-  myDual = new dualSys(nNode, nLabel, tau, maxIter, annealIval);
+  myDual = std::make_unique<dualSys>(nNode, nLabel, tau, maxIter, annealIval);
 
   if ((mrfModel.compare("var") == 0) || (mrfModel.compare("spden1") == 0) || (mrfModel.compare("spden2") == 0) || (mrfModel.compare("spden3") == 0) || (mrfModel.compare("sqdiff") == 0) || (mrfModel.compare("spvar") == 0) || (mrfModel.compare("spvarcom") == 0)) {
    for (int i = 0; i != nNode; ++i) {
@@ -880,7 +869,6 @@ int main(int argc, char* argv[])
   std::cout<<"Time taken to reach best integral primal "<<myDual->getTimeToBestPrimal()<<std::endl;
  }
  else if (algoName.compare("ad3") == 0) {
-  delete myDual;
 
   nNode = gm.numberOfVariables();
 
@@ -928,7 +916,6 @@ int main(int argc, char* argv[])
 
  return 0;
 }
-
 
 void populateCliqLab(int lev, int nLabel, std::vector<std::vector<int> > &cliqLab) {
  if (lev == 1) {
